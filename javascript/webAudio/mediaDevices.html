@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mediaDevices test</title>
+</head>
+
+<body>
+  <button id="screen">start screen recording</button>
+  <button id="picture">start picture recording</button>
+  <button id="capture" title="firefox is not support imageCapture">capture</button>
+  <button id="end">end</button>
+  <audio id="audio"></audio>
+  <video id="video" controls style="width: 200px; height: 200px;"></video>
+  <canvas id="canvas" width="400" height="300"></canvas>
+  
+  <audio id="video" controls src="http://s1-bos.liveatc.net/rjaa_rdr5"></audio>
+</body>
+<script type="text/javascript">
+  // 开启摄像头或者录屏设备，实时获取视频数据
+  (function () {
+    // navigator.mediaDevices methods
+    const mediaType = {
+      screen: 'getDisplayMedia',
+      picture: 'getUserMedia'
+    }
+    Object.freeze(mediaType)
+
+
+    function activateMediaDevices(type) {
+      if (!type || !mediaType[type]) return
+
+      const stop = new Promise((resolve, reject) => {
+        let chunks = [];
+        // 创建一个新的媒体录制器
+        let mediaRecorder, streamCache
+        navigator.mediaDevices[mediaType[type]]({ audio: true, video: true })
+          .then(function (mediaStream) {
+            document.getElementById('video').srcObject = mediaStream;
+
+            // 创建一个新的媒体录制器
+            mediaRecorder = new MediaRecorder(streamCache = mediaStream);
+            // 当每个新的数据块可用时，将其添加到储存数据块的数组中
+            mediaRecorder.ondataavailable = function (e) {
+              chunks.push(e.data);
+            };
+            // 当录音结束时，将数据块合并为单个 Blob 并创建文件
+            mediaRecorder.onstop = function (e) {
+              document.getElementById('video').srcObject = null
+              // 断开媒体流的连接
+              streamCache.getTracks().forEach((track) => track.stop());
+              downA(createObjectURL(chunks, "video/webm"), 'RecordedVideo.webm')
+            };
+            // 开始录音 每隔time生成一次数据
+            mediaRecorder.start(1500);
+
+            const track = mediaStream.getVideoTracks()[0];
+            imageCapture = new ImageCapture(track);
+
+            console.log(imageCapture, 'imageCapture')
+            console.log(track, 'track')
+            resolve([imageCapture, function () {
+              if (!mediaRecorder) return
+              // 停止录音调用 mediaRecorder.stop()
+              mediaRecorder.stop()
+              mediaRecorder = null
+            }])
+            return imageCapture.getPhotoCapabilities();
+          }).then(photoCapabilities => {
+            const settings = imageCapture.track.getSettings();
+            console.log(photoCapabilities, '---photoCapabilities')
+            return imageCapture.getPhotoSettings();
+          }).then(photoSettings => {
+            console.log(photoSettings, '---photoSettings')
+          })
+          .catch(function (err) {
+            console.log('Error', err);
+            reject(err)
+          });
+      })
+
+      return stop
+    }
+
+    function createObjectURL(chunks, type) {
+      const blob = chunks instanceof Blob ? chunks : new Blob(chunks, { type });
+      return URL.createObjectURL(blob);
+    }
+
+    function downA(href, download) {
+      let a = document.createElement('a');
+      a.href = href
+      a.download = download
+      a.click()
+      a = null
+    }
+
+    let stop
+    document.getElementById("screen").addEventListener("click", () => {
+      if (stop) return console.error('please stop the activated')
+      stop = activateMediaDevices('screen')
+    })
+
+    document.getElementById("picture").addEventListener("click", () => {
+      if (stop) return console.error('please stop the activated')
+      stop = activateMediaDevices('picture')
+    })
+
+    document.getElementById('capture').addEventListener('click', () => {
+      stop && stop.then(([imageCapture, _stop]) => {
+        // imageCapture.takePhoto({imageWidth: 640}).then((blob) => {
+        //   downA(createObjectURL(blob), 'capture.png')
+        // })
+
+        imageCapture.grabFrame().then((imageBitmap) => {
+          console.log("Grabbed frame:", imageBitmap);
+          const canvas = document.querySelector('#canvas')
+          // canvas.width = imageBitmap.width;
+          // canvas.height = imageBitmap.height;
+          canvas.getContext("2d").drawImage(imageBitmap, 0, 0);
+          // canvas.classList.remove("hidden");
+        })
+      })
+
+    });
+
+    document.getElementById('end').addEventListener('click', () => {
+      stop && stop.then(([_stream, _stop]) => {
+        _stop()
+        stop = null
+      })
+    });
+
+  })()
+</script>
+
+</html>
