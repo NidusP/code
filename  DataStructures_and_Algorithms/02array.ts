@@ -21,7 +21,7 @@
 
 // 双指针法（快慢指针法）：「通过一个快指针和慢指针在一个for循环下完成两个for循环的工作。」
 // 「双指针法（快慢指针法）在数组和链表的操作中是非常常见的，很多考察数组和链表操作的面试题，都使用双指针法。」
-function solution(nums: number[], target: number) {
+function solution_02(nums: number[], target: number) {
   let slow = 0;
   for (let fast = 0; fast < nums.length; fast++) {
     if (target !== nums[fast]) {
@@ -44,7 +44,7 @@ function main() {
   ];
 
   test.forEach((item) => {
-    console.log(solution(item.arr, item.target), item.arr);
+    console.log(solution_02(item.arr, item.target), item.arr);
   });
 }
 

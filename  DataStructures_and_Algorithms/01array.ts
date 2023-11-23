@@ -24,7 +24,7 @@
 */
 
 // 有序数组，可用二分法查找
-function solution(arr: number[], target: number) {
+function solution_1(arr: number[], target: number) {
   let left = 0,
     right = arr.length - 1;
   while (left <= right) {
@@ -41,7 +41,7 @@ function solution(arr: number[], target: number) {
 }
 
 // 临界值不同
-function solution_a(arr: number[], target: number) {
+function solution_1_a(arr: number[], target: number) {
   let left = 0,
     right = arr.length;
   while (left < right) {
@@ -94,8 +94,8 @@ function test() {
   ];
   test.forEach((item) => {
     console.log(
-      solution(item.arr, item.target),
-      solution_a(item.arr, item.target)
+      solution_1(item.arr, item.target),
+      solution_1_a(item.arr, item.target)
     );
   });
 }
